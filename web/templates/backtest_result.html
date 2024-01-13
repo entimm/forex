@@ -138,12 +138,16 @@
       const backtest_trades = {{ backtest_trades | safe }};
 
       function markPointOverlayData(item) {
+        let show = '平'
+        if (item.action === 'BUY') {
+          show = item.direction === 'LONG' ? '多' : '空';
+        }
         return {
           name: 'myAnnotation',
           groupId: 'mark_point',
           extendData: {
             direction: item.action === 'BUY',
-            text: item.action.charAt(0).toUpperCase(),
+            text: show,
           },
           lock: true,
           points: [{timestamp: item.date, value: item.price}],

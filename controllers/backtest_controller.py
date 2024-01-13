@@ -58,6 +58,7 @@ def generate_order_leverage(trades, initial_capital=100000):
     order = {}
     capital = initial_capital
     buy_date = ''
+    buy_direction = ''
     buy_price = 0
     hold_vol = 0
 
@@ -65,10 +66,12 @@ def generate_order_leverage(trades, initial_capital=100000):
         if trade["action"] == "BUY":
             buy_date = trade["date"]
             buy_price = trade["price"]
+            buy_direction = trade["direction"]
 
             hold_vol = (capital * bet_percentage * leverage // trade["price"])
         elif trade["action"] == "SELL":
             profit = round((trade["price"] - buy_price) * hold_vol, 2)
+            profit = profit * (1 if buy_direction == 'LONG' else -1)
             capital = capital + profit
 
             hold_vol = 0
