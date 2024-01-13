@@ -1,0 +1,21 @@
+{% extends '_layout.html' %}
+{% block head %}
+  <title>这个页面不存在</title>
+{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col s12">
+        <h3>这个页面不存在</h3>
+        {% if error %}
+          <p>{{ error }}</p>
+        {% else %}
+          <p>Oops! Something went wrong.</p>
+        {% endif %}
+        <button class="waves-effect waves-light btn right" onclick="window.history.back()">返回上一页</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block footer %}
+{% endblock %}

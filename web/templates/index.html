@@ -1,0 +1,54 @@
+{% extends '_layout.html' %}
+{% block head %}
+  <style>
+    #content {
+      width: 80%;
+      max-width: 1500px;
+      margin: 50px auto;
+    }
+
+    .card a {
+      display: block;
+      padding: 20px;
+      font-size: 1.5rem;
+
+      color: #000;
+    }
+
+    .card .system {
+      border-bottom: 3px solid #f32c2c;
+    }
+
+    .card .system2 {
+      border-bottom: 3px solid #d9ff67;
+    }
+
+    .card .external {
+      border-bottom: 3px solid #8c2cf3;
+    }
+  </style>
+  <title>韭菜收割机 - 致富神器</title>
+{% endblock %}
+{% block content %}
+  <div id="content">
+    {% for menu_type, menus in grouped_menus.items() %}
+      <div class="row">
+        {% for menu in menus %}
+          <div class="col s12 m6 l4">
+            <div class="card hoverable">
+              <div class="card-content">
+                <span class="card-title">
+                  <a href="{{ menu.url }}" target="_blank" class="{{ menu.type }}">
+                    {{ menu.name }}
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+{% block footer %}
+{% endblock %}

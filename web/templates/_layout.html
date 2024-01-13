@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/third/materialize.min.css">
+  {% block head %}
+  {% endblock %}
+  <link rel="stylesheet" href="/static/global.css">
+  <script src="/static/third/pace.min.js"></script>
+  <link rel="stylesheet" href="/static/third/pace-flash.css">
+</head>
+<body>
+<header>
+  <nav class="z-depth-2">
+    <div class="nav-wrapper">
+      <a href="/" class="brand-logo">韭菜收割机</a>
+      <ul id="nav-mobile" class="right hide-on-med-and-down">
+        {% for menu in menus if menu.type == 'system' %}
+          <li {% if menu.url == request.path %}class="active"{% endif %}>
+            <a href="{{ menu.url }}" {% if menu.type == 'external' %}target="_blank"{% endif %}>{{ menu.name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </nav>
+</header>
+<main id="main">
+  {% block content %}
+  {% endblock %}
+</main>
+{% block footer %}
+{% endblock %}
+</body>
+</html>

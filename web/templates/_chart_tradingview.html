@@ -1,0 +1,165 @@
+<script src="/static/third/lightweight-charts.standalone.production.js"></script>
+<script src="/static/indicator_calculate.js"></script>
+<script>
+  let klineList = {{ kline_list | tojson }};
+  klineList = klineList.map(item => {
+    let data = {
+      time: new Date(item.time).getTime() / 1000 + 3600 * 8,
+      open: item.open,
+      high: item.high,
+      low: item.low,
+      close: item.close,
+      volume: item.volume,
+      last_close: item.last_close,
+    }
+
+    // 最大涨幅
+    const maxp = ['68', '30'].includes(symbol.slice(0, 2)) ? 0.2 : 0.1;
+    // 涨停色
+    if (item.close >= Math.round(item.last_close * (1 + maxp))) {
+      data.color = '#F500FF';
+    }
+    // 跌停色
+    if (item.close <= Math.round(item.last_close * (1 - maxp))) {
+      data.color = '#00FF2A';
+    }
+    // 炸板-涨
+    if (item.high !== item.close && item.open <= item.close && item.high >= Math.round(item.last_close * (1 + maxp))) {
+      data.color = '#ECAB07';
+    }
+    // 炸板-跌
+    if (item.high !== item.close && item.open > item.close && item.high >= Math.round(item.last_close * (1 + maxp))) {
+      data.color = '#25FFEC';
+    }
+
+    return data;
+  });
+  const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+    grid: {
+      vertLines: {
+        color: '#F2F3F3',
+      },
+      horzLines: {
+        color: '#F2F3F3',
+      },
+    },
+    rightPriceScale: {
+      borderColor: '#FFF',
+      scaleMargins: {
+        top: 0.02,
+        bottom: 0.22,
+      },
+    },
+    timeScale: {
+      borderVisible: false,
+      timeVisible: true,
+      timeFormat: '%Y-%m-%d %H:%M',
+    },
+    localization: {
+      dateFormat: 'yyyy-MM-dd',
+    },
+    crosshair: {
+      mode: 0,
+    }
+  });
+
+  let mainSeries = chart.addCandlestickSeries({
+    upColor: '#F23644',
+    downColor: '#0A9981',
+    borderUpColor: '#F23644',
+    borderDownColor: '#0A9981',
+    wickUpColor: '#F23644',
+    wickDownColor: '#0A9981',
+  });
+  mainSeries.setData(klineList);
+
+  chart.addHistogramSeries({
+    color: '#333',
+    lineWidth: 2,
+    priceFormat: {
+      type: 'volume',
+    },
+    priceScaleId: 'volume',
+  }).setData(klineList.map(item => ({
+    time: item.time,
+    value: item.volume,
+    color: item.open > item.close ? '#92D2CC' : '#F7A9A7'
+  })));
+  chart.priceScale('volume').applyOptions({
+    scaleMargins: {
+      top: 0.8,
+      bottom: 0.1,
+    },
+  });
+
+  indicator_ma_config.forEach(function (item) {
+    chart.addLineSeries({
+      color: item.color,
+      lineWidth: item.size,
+      priceLineVisible: false,
+    }).setData(calMaWithTime(klineList, item.period).map(item => ({
+      time: item.time,
+      value: item.value,
+    })));
+  });
+
+  const shortPeriod = indicator_macd_config.short;
+  const longPeriod = indicator_macd_config.long;
+  const signalPeriod = indicator_macd_config.signal;
+
+  const {macdLine, signalLine, histogram} = calMacdWithTime(
+    klineList,
+    shortPeriod,
+    longPeriod,
+    signalPeriod
+  );
+
+  chart.addLineSeries({
+    priceScaleId: 'macd',
+    color: '#2A62FF',
+    lineWidth: 1,
+    priceLineVisible: false,
+  }).setData(macdLine.map(item => ({
+    time: item.time,
+    value: item.value
+  })));
+  chart.addLineSeries({
+    priceScaleId: 'macd',
+    color: '#FF6D00',
+    lineWidth: 1,
+    priceLineVisible: false,
+  }).setData(signalLine.map(item => ({
+    time: item.time,
+    value: item.value
+  })));
+  chart.addHistogramSeries({
+    priceScaleId: 'macd',
+    color: '#333',
+    priceFormat: {
+      type: 'volume',
+      precision: 2
+    },
+    priceLineVisible: false,
+    lastValueVisible: true,
+  }).setData(histogram.map(item => ({
+    time: item.time,
+    value: item.value,
+    color: item.value >= 0 ? '#FF5252' : '#26A69A'
+  })));
+
+
+  chart.priceScale('macd').applyOptions({
+    scaleMargins: {
+      top: 0.9,
+      bottom: 0,
+    },
+  });
+
+  window.addEventListener('resize', function () {
+    let parentContainer = $('main')
+    chart.applyOptions({
+      width: parentContainer.outerWidth(),
+      height: parentContainer.outerHeight()
+    });
+  });
+</script>

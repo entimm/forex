@@ -1,0 +1,311 @@
+{% extends '_layout.html' %}
+{% block head %}
+  <title>回测结果</title>
+  <style>
+    #chart {
+      height: 60% !important;
+      width: 100% !important;
+    }
+
+    #chart_fund {
+      height: 20% !important;
+      width: 100% !important;
+    }
+
+    .text-red {
+      color: red;
+    }
+
+    .text-green {
+      color: green;
+    }
+
+    #grid-container {
+      width: 1800px;
+      margin: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    th {
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    td, th {
+      padding: 0;
+      white-space: nowrap;
+      width: 100px;
+      position: relative;
+      cursor: pointer;
+      border-radius: 0;
+    }
+
+    .red1 {
+      color: #FF8800;
+    }
+
+    .red2 {
+      color: #ff0000;
+    }
+
+    .red3 {
+      color: #f500ff;
+    }
+
+    .green1 {
+      color: #00f7ff;
+    }
+
+    .green2 {
+      color: #00ff00;
+    }
+
+    .green3 {
+      color: #1619de;
+    }
+
+    #grid tr:hover {
+      background-color: rgba(0, 139, 125, 0.5);
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  {% if kline_list %}
+    <div id="chart"></div>
+  {% endif %}
+  <div id="chart_fund"></div>
+  <div id="grid-container">
+    <table id="grid" class="striped centered z-depth-5">
+      <thead>
+      <tr>
+        <th>序号</th>
+        <th>代码</th>
+        <th>买入价格</th>
+        <th>盈亏</th>
+        <th>市值</th>
+        <th>持有时间</th>
+      </tr>
+      </thead>
+      <tbody id="table-content"></tbody>
+    </table>
+  </div>
+{% endblock %}
+{% block footer %}
+  <script>
+    const indicator_ma_config = {{ indicator_config.get('ma', []) | safe }};
+    const indicator_macd_config = {{ indicator_config.get('macd', []) | safe }};
+  </script>
+  {% if kline_list %}
+    {% include "_chart_kline.html" %}
+    <script>
+      chart.removeIndicator('VOL-PANEL', 'VOL');
+      chart.removeIndicator('MACD-PANEL', 'MACD');
+      klinecharts.registerOverlay({
+        name: 'myAnnotation',
+        totalStep: 2,
+        createPointFigures: ({overlay, coordinates}) => {
+          return [
+            {
+              type: 'text',
+              attrs: {
+                x: coordinates[0].x,
+                y: coordinates[0].y,
+                text: overlay.extendData.direction ? '▼' : '▲',
+                align: 'center',
+                baseline: overlay.extendData.direction ? 'bottom' : 'top',
+              },
+              ignoreEvent: true
+            },
+            {
+              type: 'text',
+              attrs: {
+                x: coordinates[0].x,
+                y: coordinates[0].y + 16 * (overlay.extendData.direction ? -1 : 1),
+                text: overlay.extendData.text ?? '',
+                align: 'center',
+                baseline: overlay.extendData.direction ? 'bottom' : 'top',
+              },
+              ignoreEvent: true,
+            }
+          ]
+        },
+      });
+
+      const backtest_trades = {{ backtest_trades | safe }};
+
+      function markPointOverlayData(item) {
+        return {
+          name: 'myAnnotation',
+          groupId: 'mark_point',
+          extendData: {
+            direction: item.action === 'BUY',
+            text: item.action.charAt(0).toUpperCase(),
+          },
+          lock: true,
+          points: [{timestamp: item.date, value: item.price}],
+          styles: {
+            text: {
+              color: item.action === 'BUY' ? '#ff00b7' : '#6e28e5',
+              size: 16,
+            }
+          },
+        }
+      }
+
+      backtest_trades.forEach(function (item) {
+        chart.createOverlay(markPointOverlayData(item));
+      });
+    </script>
+  {% endif %}
+  <script src="/static/third/echarts.min.js"></script>
+  <script>
+    const period = '{{ request_args.get('period', 'F5') }}';
+    fetch(document.URL.replace('backtest_result', 'backtest_result_data')).then(response => response.json())
+      .then(jsonData => {
+        let dates = Object.keys(jsonData);
+        let capitals = dates.map(date => (jsonData[date].capital / 10000.0).toFixed(2));
+
+        let fundChart = echarts.init(document.getElementById('chart_fund'));
+        let option = {
+          grid: {
+            left: '1%',
+            right: '2%',
+            bottom: '1%',
+            containLabel: true
+          },
+          xAxis: {
+            type: 'category',
+            data: dates,
+          },
+          yAxis: {
+            position: 'right',
+          },
+          series: [{
+            data: capitals,
+            type: 'line',
+            showSymbol: false,
+            smooth: 0.3,
+            emphasis: {
+              focus: 'series',
+              lineStyle: {
+                width: 2,
+              },
+            },
+            itemStyle: {
+              color: 'rgb(246,119,119)'
+            },
+            areaStyle: {
+              color: 'rgb(246,119,119)'
+            },
+            lineStyle: {
+              color: 'rgba(245,91,91,0.5)'
+            },
+          }],
+          tooltip: {
+            stack: 'Total',
+            trigger: 'axis',
+            axisPointer: {
+              type: 'cross'
+            },
+            formatter: function (params) {
+              let date = params[0].name;
+              let color = jsonData[date].profit > 0 ? 'text-red' : 'text-green';
+              return '<bold>日期</bold>: ' + date + '<br/>' +
+                '<bold>代码</bold>: ' + jsonData[date].symbol + '<br/>' +
+                '<bold>名称</bold>: ' + jsonData[date].name + '<br/>' +
+                '<bold>股价</bold>: ' + jsonData[date].price + '<br/>' +
+                '<bold>时间</bold>: ' + jsonData[date].date_desc + '<br/>' +
+                '<bold>市值</bold>: ' + (jsonData[date].capital / 10000.0).toFixed(2) + '万</span>' + '<br/>' +
+                `<bold>盈亏</bold>: <span class="${color}">` + jsonData[date].profit + ' </span>' + '<br/>';
+            }
+          },
+          dataZoom: [
+            {
+              type: 'inside',
+              start: 0,
+              end: 9999
+            }
+          ],
+        };
+
+        option && fundChart.setOption(option);
+
+        fundChart.on('click', 'series', function (params) {
+          if (!/^\d{4}-\d{2}-\d{2}/.test(params['name'])) return;
+          let date = params['name'].slice(0, 10);
+          typeof scrollToDateRange === 'function' && scrollToDateRange(date);
+        })
+
+        window.addEventListener('resize', function () {
+          fundChart.resize();
+        });
+
+        const reversedKeys = Object.keys(jsonData).reverse();
+        const tableContent = document.getElementById('table-content');
+        let i = reversedKeys.length;
+        reversedKeys.forEach(key => {
+          if (jsonData.hasOwnProperty(key)) {
+            const item = jsonData[key];
+            const row = tableContent.insertRow();
+
+            const index = row.insertCell(0);
+            index.innerHTML = String(i--);
+
+            const cellSymbol = row.insertCell(1);
+            cellSymbol.innerHTML = item.symbol;
+
+            const cellPrice = row.insertCell(2);
+            cellPrice.innerHTML = item.price;
+
+            const cellChangeRate = row.insertCell(3);
+            cellChangeRate.innerHTML = item.profit;
+            addDotClass(cellChangeRate, item.profit)
+
+            const cellCapital = row.insertCell(4);
+            cellCapital.innerHTML = (item.capital / 10000.0).toFixed(2) + '万';
+
+            const cellDateDesc = row.insertCell(5);
+            cellDateDesc.innerHTML = item.date_desc;
+
+            row.addEventListener('click', () => {
+              let [startDate, _] = item.date_desc.split(' - ');
+              if (/\d{8}/.test(startDate)) {
+                startDate = startDate.substring(0, 4) + '-' + startDate.substring(4, 6) + '-' + startDate.substring(6, 8);
+              } else {
+                startDate = startDate.substring(0, 4) + '-' + startDate.substring(5, 7) + '-' + startDate.substring(8, 10);
+              }
+
+              window.open(`/chart?date=${startDate}&period=${period}&symbol=${item.symbol}`, "_blank");
+            });
+          }
+        });
+      })
+
+    function addDotClass(element, price) {
+      const colorClasses = [
+        {'condition': price >= 30, 'className': 'red3'},
+        {'condition': price >= 20, 'className': 'red2'},
+        {'condition': price >= 10, 'className': 'red1'},
+        {'condition': price <= -10, 'className': 'green3'},
+        {'condition': price <= -20, 'className': 'green2'},
+        {'condition': price <= -30, 'className': 'green1'},
+      ];
+      colorClasses.forEach((dotClass) => {
+        if (dotClass.condition) {
+          element.classList.add('dot', dotClass.className);
+        }
+      });
+    }
+
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  </script>
+{% endblock %}

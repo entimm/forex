@@ -1,0 +1,70 @@
+{% extends '_layout.html' %}
+{% block head %}
+  <title>K线图</title>
+  <style>
+    .fixed-links .symbol-name {
+      font-size: 20px;
+    }
+
+    .fixed-links .symbol {
+      font-size: 15px;
+    }
+
+    #tooltip-stock-info {
+      position: fixed;
+      display: none;
+      height: 400px;
+      z-index: 99;
+    }
+
+    #tooltip-stock-info .card-panel {
+      height: 400px;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+  <div id="fixed-links-container" class="right-top">
+    <div class="fixed-links">
+      {% for period_key, period_name in period_list.items() %}
+        {{ create_link(request_args, {'period': period_key}, request_args.period == period_key, period_name) | safe }}
+      {% endfor %}
+      {{ create_link(request_args, {'req_real': (not request_args.req_real)}, request_args.req_real == 1, '实时') | safe }}
+      {{ create_link(request_args, {'chart_engine': (not request_args.chart_engine), 'show_chan': 0}, request_args.chart_engine == 1, 'TV') | safe }}
+      {{ create_link(request_args, {'show_chan': (not request_args.show_chan)}, request_args.show_chan == 1, '缠论') | safe }}
+      <a href="#" target="_blank">新窗口</a>
+    </div>
+    <div class="fixed-links">
+      <span class="symbol">{{ request_args.symbol }} - </span><span class="symbol-name">{{ ticker_name }}</span>
+    </div>
+  </div>
+
+  <div id="chart"></div>
+  <script src="/static/third/jquery-3.7.1.min.js"></script>
+  <script src="/static/third/materialize.min.js"></script>
+  <script>
+    const symbol = '{{ request_args.symbol }}';
+    const indicator_ma_config = {{ indicator_config.get('ma') | safe }};
+    const indicator_macd_config = {{ indicator_config.get('macd') | safe }};
+  </script>
+
+  {% if request_args.chart_engine == 0 %}
+    {% include "_chart_kline.html" %}
+  {% else %}
+    {% include "_chart_tradingview.html" %}
+  {% endif %}
+
+  <div id="tooltip-stock-info" class="stock-info right-bottom teal z-depth-5"></div>
+{% endblock %}
+{% block footer %}
+  <script>
+    document.addEventListener('keydown', function (event) {
+      const validKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      if (validKeys.includes(event.key)) {
+        const index = parseInt(event.key, 10) - 1;
+        const targetLink = $('#fixed-links-container .fixed-links a').eq(index)[0];
+        targetLink?.click();
+      }
+    });
+  </script>
+
+{% endblock %}

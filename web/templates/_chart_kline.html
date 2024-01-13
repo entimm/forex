@@ -1,0 +1,309 @@
+<script src="/static/third/klinecharts.min.js"></script>
+<script>
+  let chart = klinecharts.init('chart', {
+    timezone: 'Asia/Shanghai',
+    customApi: {
+      formatDate: function (dateTimeFormat, timestamp, format, type) {
+        return timestamp
+      }
+    }
+  })
+  chart._chartStore._timeScaleStore.setBarSpaceLimitConfig(0.01, 200)
+  chart.createIndicator('VOL', true, {'id': 'VOL-PANEL'})
+  chart.createIndicator('MACD', true, {'id': 'MACD-PANEL'})
+  chart.setStyles({
+    // 网格线
+    grid: {
+      show: true,
+      horizontal: {
+        show: true,
+        size: 1,
+        color: '#F0F0F0',
+        style: 'solid',
+      },
+      vertical: {
+        show: false,
+        size: 1,
+        color: '#F0F0F0',
+        style: 'solid',
+      }
+    },
+    candle: {
+      // 蜡烛图类型 'candle_solid'|'candle_stroke'|'candle_up_stroke'|'candle_down_stroke'|'ohlc'|'area'
+      type: 'candle_solid',
+      bar: {
+        upColor: '#F23644',
+        downColor: '#0A9981',
+        noChangeColor: '#888888',
+        upBorderColor: '#F23644',
+        downBorderColor: '#0A9981',
+        noChangeBorderColor: '#888888',
+        upWickColor: '#F23644',
+        downWickColor: '#0A9981',
+        noChangeWickColor: '#888888'
+      },
+      tooltip: {
+        showType: 'standard',
+        custom: function (args) {
+          return [
+            {title: 'Time: ', value: args.current.timestamp},
+            {title: 'Open: ', value: args.current.open.toFixed(2).toString()},
+            {title: 'High: ', value: args.current.high.toFixed(2).toString()},
+            {title: 'Low: ', value: args.current.low.toFixed(2).toString()},
+            {title: 'Close: ', value: args.current.close.toFixed(2).toString()},
+            {title: 'Pct: ', value: ((args.current?.close / args.prev?.close - 1) * 100).toFixed(2).toString()},
+          ];
+        },
+      }
+    },
+    indicator: {
+      bars: [{
+        // 'fill' | 'stroke' | 'stroke_fill'
+        style: 'fill',
+        // 'solid' | 'dashed'
+        borderStyle: 'solid',
+        borderSize: 1,
+        borderDashedValue: [2, 2],
+        upColor: '#F23644',
+        downColor: '#0A9981',
+        noChangeColor: '#888888'
+      }],
+      lastValueMark: {
+        show: true,
+      },
+    },
+  });
+
+  chart.setPaneOptions({
+    id: 'candle_pane',
+    gap: {top: 0.02, bottom: 0.02},
+  })
+
+  chart._chartStore.getTimeScaleStore().zoom(1000)
+
+  let kline_list = {{ kline_list | safe }};
+  kline_list = kline_list.map(convertKlineData);
+  chart.applyNewData(kline_list);
+
+  function resizeChart() {
+    chart.resize();
+  }
+
+  function convertKlineData(item) {
+    return {
+      timestamp: item.time,
+      open: item.open,
+      high: item.high,
+      low: item.low,
+      close: item.close,
+      volume: item.volume,
+    }
+  }
+
+  window.addEventListener('resize', resizeChart);
+  window.addEventListener('load', resizeChart);
+
+  ////////////////////
+
+  {% if request_args.price %}
+    const price = {{ request_args.price }};
+    chart.createOverlay({
+      name: 'horizontalStraightLine',
+      points: [{value: price}],
+      groupId: 'range',
+      lock: true,
+      styles: {
+        line: {
+          color: 'rgb(101,0,255)',
+          style: 'dashed',
+          size: 1,
+          dashedValue: [6, 3],
+          zLevel: 0,
+        }
+      },
+    });
+  {% endif %}
+
+  {% if request_args.time %}
+    scrollToDTime(parseInt('{{ request_args.time }}'));
+  {% elif request_args.date %}
+    scrollToDateRange('{{ request_args.date }}');
+  {% endif %}
+
+  function scrollToDateRange(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    let dateRage = findEndPointByDate(date);
+    chart.createOverlay({
+      name: 'verticalStraightLine',
+      points: [{timestamp: dateRage.start}],
+      groupId: 'range',
+      lock: true,
+      styles: {
+        line: {
+          color: 'rgba(241,4,4,0.25)',
+          style: 'solid',
+          size: 3,
+          dashedValue: [3, 6],
+          zLevel: 0,
+        }
+      },
+    });
+    chart.createOverlay({
+      name: 'verticalStraightLine',
+      points: [{timestamp: dateRage.end}],
+      groupId: 'range',
+      lock: true,
+      styles: {
+        line: {
+          color: 'rgba(0,255,119,0.25)',
+          style: 'solid',
+          size: 3,
+          dashedValue: [3, 6],
+          zLevel: 0,
+        }
+      },
+    });
+
+    let index = kline_list.findIndex(item => timeCompare(dateRage.end, item.timestamp));
+    index = index === -1 ? kline_list.length : index;
+    chart.scrollToDataIndex(Math.min(index + 160, kline_list.length));
+  }
+
+  function scrollToDTime(time) {
+    let flag = time > 0;
+    time = Math.abs(time * 1000);
+    let targetIndex = 0;
+    for (const index in kline_list) {
+      if (new Date(kline_list[index].timestamp).getTime() >= time) {
+        targetIndex = parseInt(index);
+        console.log(targetIndex)
+        break;
+      }
+    }
+
+    chart.createOverlay({
+      name: 'verticalStraightLine',
+      points: [{timestamp: kline_list[targetIndex].timestamp}],
+      groupId: 'range',
+      lock: true,
+      styles: {
+        line: {
+          color: flag ? 'rgba(241,4,87,0.25)' : 'rgba(4,241,8,0.25)',
+          style: 'solid',
+          size: 3,
+          dashedValue: [3, 6],
+          zLevel: 0,
+        }
+      },
+    });
+
+    chart.scrollToDataIndex(Math.min(targetIndex + 160, kline_list.length));
+  }
+
+  function findEndPointByDate(targetDate) {
+    const result = {start: null, end: null};
+
+    for (const kline of kline_list) {
+      if (kline.timestamp.startsWith(targetDate)) {
+        if (!result.start) {
+          result.start = kline.timestamp;
+        }
+        result.end = kline.timestamp;
+      }
+    }
+
+    return result;
+  }
+
+  function timeCompare(timeString1, timeString2) {
+    let time1 = new Date(timeString1);
+    let time2 = new Date(timeString2);
+
+    return time2 >= time1;
+  }
+
+  ////////////////////
+
+  let verticalGapKlines = {};
+  {% if request_args is defined and request_args.period in ['F1', 'F5', 'F15', 'F30'] %}
+    verticalGapKlines = kline_list.reduce((result, entry) => {
+      let date = entry.timestamp.split(' ')[0];
+      if (!result[date]) {
+        result[date] = entry;
+      }
+
+      return result;
+    }, {});
+  {% else %}
+    verticalGapKlines = kline_list.reduce((result, entry) => {
+      let month = entry.timestamp.slice(0, 7);
+      if (!result[month]) {
+        result[month] = entry;
+      }
+
+      return result;
+    }, {});
+  {% endif %}
+  Object.entries(verticalGapKlines).forEach(function (item) {
+    chart.createOverlay({
+      name: 'verticalStraightLine',
+      groupId: 'verticalGap',
+      lock: true,
+      points: [{timestamp: item[1].timestamp}],
+      styles: {
+        line: {
+          color: '#000000',
+          size: 0.05,
+        }
+      },
+    });
+  });
+
+  ////////////////////
+
+  const periodZoomData = {
+    'F1': 240,
+    'F5': 48,
+    'F15': 16,
+    'F30': 8,
+    'D': 20,
+  };
+  const curPeriod = '{{ request_args.period }}';
+  let verticalGapVisible = true;
+  chart.subscribeAction('onZoom', function (evnet) {
+    let n = periodZoomData[curPeriod];
+    if (chart.getBarSpace() <= 30 / n) {
+      if (verticalGapVisible) {
+        verticalGapVisible = false;
+        chart.overrideOverlay({
+          groupId: 'verticalGap',
+          visible: false,
+        });
+      }
+
+    } else {
+      if (!verticalGapVisible) {
+        verticalGapVisible = true;
+        chart.overrideOverlay({
+          groupId: 'verticalGap',
+          visible: true,
+        });
+      }
+    }
+  });
+
+</script>
+{% if request_args is defined and request_args.show_chan %}
+  {% include "_chart_kline_chan.html" %}
+{% else %}
+  <script>
+    chart.createIndicator({
+      name: 'MA',
+      precision: 3,
+      calcParams: indicator_ma_config.map(item => item.period),
+      styles: {
+        lines: indicator_ma_config.map(item => ({style: 'solid', size: item.size * 0.8, color: item.color})),
+      }
+    }, false, {id: 'candle_pane'})
+  </script>
+{% endif %}

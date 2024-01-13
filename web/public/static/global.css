@@ -1,0 +1,129 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #fafafa;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+}
+
+header {
+  width: 100%;
+}
+
+main {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+nav {
+  height: 32px;
+  line-height: 32px;
+  background-color: #ff672b;
+}
+
+nav .brand-logo {
+  font-size: 1.5rem;
+}
+
+nav .nav-wrapper {
+  padding-left: 1%;
+  padding-right: 1%;
+  overflow: hidden;
+}
+
+nav ul {
+  margin-left: 200px;
+}
+
+nav ul li.active {
+  background-color: #008b7d;
+}
+
+th {
+  background-color: #008b7d;
+}
+
+table tr td {
+  border: 1px solid rgba(227, 227, 227, 0.5);
+}
+
+#chart {
+  width: 100%;
+  height: 100%;
+}
+
+#fixed-links-container {
+  position: absolute;
+  z-index: 99;
+  margin-left: 20px;
+}
+
+.fixed-links {
+  position: relative;
+  text-align: right;
+  margin: 5px;
+}
+
+.fixed-links a {
+  margin: 0 1px;
+  font-size: 13px;
+}
+
+.fixed-links .highlight {
+  color: #FF5733;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+#fixed-links-container.right-top {
+  margin-right: 80px;
+}
+
+.card .card-content {
+  padding: 0;
+}
+
+.right-bottom {
+  right: 0;
+  bottom: 0;
+}
+
+.right-top {
+  right: 0;
+  top: 0;
+}
+
+.stock-info .compact-content {
+  font-size: 14px;
+  margin: 5px;
+}
+
+.stock-info .compact-content p strong {
+  color: #fff200;
+}
+
+.stock-info .compact-content * {
+  margin: 0;
+  padding: 0;
+  color: #f5f5f5;
+}
+
+.stock-info.card-panel {
+  padding: 0;
+  margin: 0;
+  display: inline-block;
+  width: 460px;
+  height: 308px;
+  overflow-y: hidden;
+  z-index: 99;
+}
