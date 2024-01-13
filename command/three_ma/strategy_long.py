@@ -56,8 +56,9 @@ class StrategyLong:
         conditions = [
             not row['cross_ma15_ma60'],
             row['ma432_angle'] > 0,
-            row['ma60_angle'] > 0.06,
-            row['ma15_angle'] > 0.1,
+            row['histogram'] > 0,
+            # row['ma60_angle'] > 0.06,
+            # row['ma15_angle'] > 0.1,
             row['ma60'] >= row['ma432'],
             row['ma15'] >= row['ma432'],
         ]

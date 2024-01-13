@@ -81,6 +81,13 @@ class Strategy:
         df['ma432_angle'] = ma_angle(df, 'ma432')
         df['cross_ma15_ma60'] = df['ma15'] > df['ma60']
 
+        # 计算 MACD, 信号线 和 直方图
+        df['ema12'] = df['close'].ewm(span=7).mean()
+        df['ema26'] = df['close'].ewm(span=14).mean()
+        df['macd'] = df['ema12'] - df['ema26']
+        df['signal'] = df['macd'].ewm(span=6).mean()
+        df['histogram'] = df['macd'] - df['signal']
+
         df = df.reset_index(names='date')
         df['time'] = df['date'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
