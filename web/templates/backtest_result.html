@@ -74,6 +74,12 @@
   </style>
 {% endblock %}
 {% block content %}
+  <div id="fixed-links-container" class="right-top">
+    <div class="fixed-links">
+      <a href="javascript:void(0);" onclick="openLink()">新打开行情</a>
+    </div>
+  </div>
+  <div style="clear: both;"></div>
   {% if kline_list %}
     <div id="chart"></div>
   {% endif %}
@@ -85,7 +91,8 @@
         <th>序号</th>
         <th>代码</th>
         <th>买入价格</th>
-        <th>盈亏</th>
+        <th>盈亏额</th>
+        <th>盈亏比</th>
         <th>市值</th>
         <th>持有时间</th>
       </tr>
@@ -98,6 +105,9 @@
   <script>
     const indicator_ma_config = {{ indicator_config.get('ma', []) | safe }};
     const indicator_macd_config = {{ indicator_config.get('macd', []) | safe }};
+
+    let date = '';
+    let symbol = '{{ request_args.symbol }}';
   </script>
   {% if kline_list %}
     {% include "_chart_kline.html" %}
@@ -169,9 +179,9 @@
   <script>
     const period = '{{ request_args.get('period', 'F5') }}';
     fetch(document.URL.replace('backtest_result', 'backtest_result_data')).then(response => response.json())
-      .then(jsonData => {
-        let dates = Object.keys(jsonData);
-        let capitals = dates.map(date => (jsonData[date].capital / 10000.0).toFixed(2));
+      .then(tableData => {
+        let dates = Object.keys(tableData);
+        let capitals = dates.map(date => (tableData[date].capital / 10000.0).toFixed(2));
 
         let fundChart = echarts.init(document.getElementById('chart_fund'));
         let option = {
@@ -217,14 +227,15 @@
             },
             formatter: function (params) {
               let date = params[0].name;
-              let color = jsonData[date].profit > 0 ? 'text-red' : 'text-green';
+              let color = tableData[date].profit_percent > 0 ? 'text-red' : 'text-green';
               return '<bold>日期</bold>: ' + date + '<br/>' +
-                '<bold>代码</bold>: ' + jsonData[date].symbol + '<br/>' +
-                '<bold>名称</bold>: ' + jsonData[date].name + '<br/>' +
-                '<bold>股价</bold>: ' + jsonData[date].price + '<br/>' +
-                '<bold>时间</bold>: ' + jsonData[date].date_desc + '<br/>' +
-                '<bold>市值</bold>: ' + (jsonData[date].capital / 10000.0).toFixed(2) + '万</span>' + '<br/>' +
-                `<bold>盈亏</bold>: <span class="${color}">` + jsonData[date].profit + ' </span>' + '<br/>';
+                '<bold>代码</bold>: ' + tableData[date].symbol + '<br/>' +
+                '<bold>名称</bold>: ' + tableData[date].name + '<br/>' +
+                '<bold>股价</bold>: ' + tableData[date].price + '<br/>' +
+                '<bold>时间</bold>: ' + tableData[date].date_desc + '<br/>' +
+                '<bold>市值</bold>: ' + (tableData[date].capital / 10000.0).toFixed(2) + '万</span>' + '<br/>' +
+                `<bold>盈亏额</bold>: <span class="${color}">` + tableData[date].profit_amount + ' </span>' + '<br/>' +
+                `<bold>盈亏比</bold>: <span class="${color}">` + tableData[date].profit_percent + ' </span>' + '<br/>';
             }
           },
           dataZoom: [
@@ -241,19 +252,19 @@
         fundChart.on('click', 'series', function (params) {
           if (!/^\d{4}-\d{2}-\d{2}/.test(params['name'])) return;
           let date = params['name'].slice(0, 10);
-          typeof scrollToDateRange === 'function' && scrollToDateRange(date);
+          typeof scrollToDateRange === 'function' && gotoDate(date);
         })
 
         window.addEventListener('resize', function () {
           fundChart.resize();
         });
 
-        const reversedKeys = Object.keys(jsonData).reverse();
+        const reversedKeys = Object.keys(tableData).reverse();
         const tableContent = document.getElementById('table-content');
         let i = reversedKeys.length;
         reversedKeys.forEach(key => {
-          if (jsonData.hasOwnProperty(key)) {
-            const item = jsonData[key];
+          if (tableData.hasOwnProperty(key)) {
+            const item = tableData[key];
             const row = tableContent.insertRow();
 
             const index = row.insertCell(0);
@@ -265,14 +276,17 @@
             const cellPrice = row.insertCell(2);
             cellPrice.innerHTML = item.price;
 
-            const cellChangeRate = row.insertCell(3);
-            cellChangeRate.innerHTML = item.profit;
-            addDotClass(cellChangeRate, item.profit)
+            const cellProfitAmount = row.insertCell(3);
+            cellProfitAmount.innerHTML = item.profit_amount;
 
-            const cellCapital = row.insertCell(4);
+            const cellProfitPercent = row.insertCell(4);
+            cellProfitPercent.innerHTML = item.profit_percent;
+            addDotClass(cellProfitPercent, item.profit_percent)
+
+            const cellCapital = row.insertCell(5);
             cellCapital.innerHTML = (item.capital / 10000.0).toFixed(2) + '万';
 
-            const cellDateDesc = row.insertCell(5);
+            const cellDateDesc = row.insertCell(6);
             cellDateDesc.innerHTML = item.date_desc;
 
             row.addEventListener('click', () => {
@@ -283,20 +297,30 @@
                 startDate = startDate.substring(0, 4) + '-' + startDate.substring(5, 7) + '-' + startDate.substring(8, 10);
               }
 
-              window.open(`/chart?date=${startDate}&period=${period}&symbol=${item.symbol}`, "_blank");
+              symbol = item.symbol;
+              gotoDate(startDate)
             });
           }
         });
-      })
+      });
+
+    function gotoDate(targetDate) {
+      date = targetDate
+      scrollToDateRange(targetDate);
+    }
+
+    function openLink() {
+      window.open(`/chart?symbol=${symbol}&period=${period}&date=${date}`, '_blank');
+    }
 
     function addDotClass(element, price) {
       const colorClasses = [
-        {'condition': price >= 30, 'className': 'red3'},
-        {'condition': price >= 20, 'className': 'red2'},
-        {'condition': price >= 10, 'className': 'red1'},
-        {'condition': price <= -10, 'className': 'green3'},
-        {'condition': price <= -20, 'className': 'green2'},
-        {'condition': price <= -30, 'className': 'green1'},
+        {'condition': price >= 20, 'className': 'red3'},
+        {'condition': price >= 10, 'className': 'red2'},
+        {'condition': price >= 5, 'className': 'red1'},
+        {'condition': price <= -5, 'className': 'green3'},
+        {'condition': price <= -10, 'className': 'green2'},
+        {'condition': price <= -20, 'className': 'green1'},
       ];
       colorClasses.forEach((dotClass) => {
         if (dotClass.condition) {

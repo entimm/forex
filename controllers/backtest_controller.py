@@ -25,7 +25,7 @@ def backtest_result_data():
 @blueprint.route('/backtest_result')
 def backtest_result():
     symbol = request.args.get('symbol', 'XAUUSD', type=str)
-    period = request.args.get('period', 'D', type=str)
+    period = request.args.get('period', 'F15', type=str)
     ma = request.args.get('ma', '5,15,60,432', type=str).split(',')
     result_json_file = os.path.join(RESOURCES_PATH, 'backtest', f'back_test_{symbol}.json' if symbol else 'back_test.json')
     kline_list = []
@@ -45,7 +45,11 @@ def backtest_result():
         'indicator_config': {
             'ma': [{'period': item, 'color': get_color_func(), 'size': 1} for item in ma]
         },
-        'request_args': request.args.to_dict(),
+        'request_args': {
+            'symbol': symbol,
+            'period': period,
+            'ma': ma,
+        }
     }
 
     return render_template('backtest_result.html', **template_var)
@@ -70,9 +74,10 @@ def generate_order_leverage(trades, initial_capital=100000):
 
             hold_vol = (capital * bet_percentage * leverage // trade["price"])
         elif trade["action"] == "SELL":
-            profit = round((trade["price"] - buy_price) * hold_vol, 2)
-            profit = profit * (1 if buy_direction == 'LONG' else -1)
-            capital = capital + profit
+            profit_amount = round((trade["price"] - buy_price) * hold_vol, 2)
+            profit_amount = profit_amount * (1 if buy_direction == 'LONG' else -1)
+            profit_percent = round(profit_amount / capital * 100, 2)
+            capital = capital + profit_amount
 
             hold_vol = 0
 
@@ -80,7 +85,8 @@ def generate_order_leverage(trades, initial_capital=100000):
                 'capital': round(capital, 2),
                 'symbol': trade.get('symbol', ''),
                 'name': '',
-                'profit': profit,
+                'profit_percent': profit_percent,
+                'profit_amount': profit_amount,
                 'price': round(trade["price"], 2),
                 'date_desc': f'{buy_date} - {trade["date"]}'
             }
