@@ -3,6 +3,7 @@ import os
 
 from flask import Blueprint, render_template, request
 
+from common.config import config
 from common.const import RESOURCES_PATH, PeriodEnum
 from common.utils import row_to_kline, get_forex_kline
 
@@ -43,7 +44,8 @@ def backtest_result():
         'kline_list': kline_list,
         'backtest_trades': trades,
         'indicator_config': {
-            'ma': [{'period': item, 'color': get_color_func(), 'size': 1} for item in ma]
+            'ma': [{'period': item, 'color': get_color_func(), 'size': 1} for item in ma],
+            'macd': config.get('indicator')['macd'],
         },
         'request_args': {
             'symbol': symbol,
@@ -55,8 +57,8 @@ def backtest_result():
     return render_template('backtest_result.html', **template_var)
 
 
-def generate_order_leverage(trades, initial_capital=100000):
-    leverage = 150
+def generate_order_leverage(trades, initial_capital=1000):
+    leverage = 100
     bet_percentage = 0.1
 
     order = {}
@@ -72,25 +74,27 @@ def generate_order_leverage(trades, initial_capital=100000):
             buy_price = trade["price"]
             buy_direction = trade["direction"]
 
-            hold_vol = (capital * bet_percentage * leverage // trade["price"])
+            hold_vol = round(capital * bet_percentage * leverage / trade["price"], 2)
         elif trade["action"] == "SELL":
             profit_amount = round((trade["price"] - buy_price) * hold_vol, 2)
             profit_amount = profit_amount * (1 if buy_direction == 'LONG' else -1)
             profit_percent = round(profit_amount / capital * 100, 2)
             capital = capital + profit_amount
 
-            hold_vol = 0
-
             order[trade["date"]] = {
                 'capital': round(capital, 2),
                 'symbol': trade.get('symbol', ''),
                 'name': '',
+                'vol': hold_vol,
+                'direction': buy_direction,
                 'profit_percent': profit_percent,
                 'profit_amount': profit_amount,
-                'price': round(trade["price"], 2),
+                'price': round(buy_price, 2),
+                'close_price': round(trade["price"], 2),
                 'date_desc': f'{buy_date} - {trade["date"]}'
             }
-            print(order[trade["date"]])
+
+            hold_vol = 0
 
     return order
 

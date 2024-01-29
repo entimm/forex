@@ -10,7 +10,6 @@
   })
   chart._chartStore._timeScaleStore.setBarSpaceLimitConfig(0.01, 200)
   chart.createIndicator('VOL', true, {'id': 'VOL-PANEL'})
-  chart.createIndicator('MACD', true, {'id': 'MACD-PANEL'})
   chart.setStyles({
     // 网格线
     grid: {
@@ -304,6 +303,11 @@
       styles: {
         lines: indicator_ma_config.map(item => ({style: 'solid', size: item.size * 0.8, color: item.color})),
       }
-    }, false, {id: 'candle_pane'})
+    }, false, {id: 'candle_pane'});
+    chart.createIndicator({
+      name: 'MACD',
+      precision: 3,
+      calcParams: indicator_macd_config,
+    }, true, {id: 'macd_panel'});
   </script>
 {% endif %}

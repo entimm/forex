@@ -90,7 +90,10 @@
       <tr>
         <th>序号</th>
         <th>代码</th>
+        <th>多空</th>
         <th>买入价格</th>
+        <th>卖出价格</th>
+        <th>交易量</th>
         <th>盈亏额</th>
         <th>盈亏比</th>
         <th>市值</th>
@@ -113,7 +116,7 @@
     {% include "_chart_kline.html" %}
     <script>
       chart.removeIndicator('VOL-PANEL', 'VOL');
-      chart.removeIndicator('MACD-PANEL', 'MACD');
+      // chart.removeIndicator('MACD-PANEL', 'MACD');
       klinecharts.registerOverlay({
         name: 'myAnnotation',
         totalStep: 2,
@@ -231,7 +234,9 @@
               return '<bold>日期</bold>: ' + date + '<br/>' +
                 '<bold>代码</bold>: ' + tableData[date].symbol + '<br/>' +
                 '<bold>名称</bold>: ' + tableData[date].name + '<br/>' +
-                '<bold>股价</bold>: ' + tableData[date].price + '<br/>' +
+                '<bold>买入价</bold>: ' + tableData[date].price + '<br/>' +
+                '<bold>卖出价</bold>: ' + tableData[date].close_price + '<br/>' +
+                '<bold>交易量</bold>: ' + tableData[date].hold_vol + '<br/>' +
                 '<bold>时间</bold>: ' + tableData[date].date_desc + '<br/>' +
                 '<bold>市值</bold>: ' + (tableData[date].capital / 10000.0).toFixed(2) + '万</span>' + '<br/>' +
                 `<bold>盈亏额</bold>: <span class="${color}">` + tableData[date].profit_amount + ' </span>' + '<br/>' +
@@ -273,20 +278,29 @@
             const cellSymbol = row.insertCell(1);
             cellSymbol.innerHTML = item.symbol;
 
-            const cellPrice = row.insertCell(2);
+            const cellDirection = row.insertCell(2);
+            cellDirection.innerHTML = item.direction === 'LONG' ? '多' : '空';
+
+            const cellPrice = row.insertCell(3);
             cellPrice.innerHTML = item.price;
 
-            const cellProfitAmount = row.insertCell(3);
+            const cellClosePrice = row.insertCell(4);
+            cellClosePrice.innerHTML = item.close_price;
+
+            const cellVol = row.insertCell(5);
+            cellVol.innerHTML = item.vol;
+
+            const cellProfitAmount = row.insertCell(6);
             cellProfitAmount.innerHTML = item.profit_amount;
 
-            const cellProfitPercent = row.insertCell(4);
+            const cellProfitPercent = row.insertCell(7);
             cellProfitPercent.innerHTML = item.profit_percent;
             addDotClass(cellProfitPercent, item.profit_percent)
 
-            const cellCapital = row.insertCell(5);
+            const cellCapital = row.insertCell(8);
             cellCapital.innerHTML = (item.capital / 10000.0).toFixed(2) + '万';
 
-            const cellDateDesc = row.insertCell(6);
+            const cellDateDesc = row.insertCell(9);
             cellDateDesc.innerHTML = item.date_desc;
 
             row.addEventListener('click', () => {
