@@ -41,6 +41,9 @@ class Strategy:
 
         self.ma = [5, 15, 60, 432]
 
+        self.lower_fractal = None
+        self.higher_fractal = None
+
     def run(self, symbol, period_enum: PeriodEnum):
         """
         主控制
@@ -58,6 +61,11 @@ class Strategy:
             fractal = self.bar_union_manager.add_bar(Bar(index, Kline(row)))
             long_strategy.run_step(row, fractal)
             short_strategy.run_step(row, fractal)
+
+            # lowestFractalPrice = self.lower_fractal.fractal_value if self.lower_fractal else 999999
+            # highestFractalPrice = self.higher_fractal.fractal_value if self.higher_fractal else -999999
+
+            # print(f"data={row['date']}#{row['ma15']}#{row['ma60']}#{row['ma432']} 【#{row['dif']}#{row['dea']}】 #{lowestFractalPrice}#{highestFractalPrice}")
 
         # 结果输出
         result_json_file = os.path.join(RESOURCES_PATH, 'backtest', f'back_test_{self.symbol}.json')
@@ -84,9 +92,9 @@ class Strategy:
         # 计算 MACD, 信号线 和 直方图
         df['ema12'] = df['close'].ewm(span=7).mean()
         df['ema26'] = df['close'].ewm(span=14).mean()
-        df['macd'] = df['ema12'] - df['ema26']
-        df['signal'] = df['macd'].ewm(span=6).mean()
-        df['histogram'] = df['macd'] - df['signal']
+        df['dif'] = df['ema12'] - df['ema26']
+        df['dea'] = df['dif'].ewm(span=6).mean()
+        df['macd'] = df['dif'] - df['dea']
 
         df = df.reset_index(names='date')
         df['time'] = df['date'].dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -109,7 +117,6 @@ class Strategy:
         print(buy_info)
         self.order_list.append(buy_info)
         self.buy_ts = ts
-        self.is_plan_buy = False
 
     def sell(self, ts, price):
         sell_info = {

@@ -85,6 +85,32 @@
   {% endif %}
   <div id="chart_fund"></div>
   <div id="grid-container">
+    <table id="stat-grid" class="striped centered z-depth-5">
+      <thead>
+      <tr>
+        <th>累计收益率</th>
+        <th>年化收益率</th>
+        <th>最大回撤</th>
+        <th>胜率</th>
+        <th>平均盈亏</th>
+        <th>频率</th>
+      </tr>
+      </thead>
+      <tbody id="stat-table-content">
+      <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      </tbody>
+    </table>
+
+    <br>
+    <br>
+
     <table id="grid" class="striped centered z-depth-5">
       <thead>
       <tr>
@@ -105,12 +131,15 @@
   </div>
 {% endblock %}
 {% block footer %}
+  <script src="/static/utils.js"></script>
   <script>
     const indicator_ma_config = {{ indicator_config.get('ma', []) | safe }};
     const indicator_macd_config = {{ indicator_config.get('macd', []) | safe }};
 
     let date = '';
     let symbol = '{{ request_args.symbol }}';
+
+    let statTable = document.getElementById('stat-grid');
   </script>
   {% if kline_list %}
     {% include "_chart_kline.html" %}
@@ -236,7 +265,7 @@
                 '<bold>名称</bold>: ' + tableData[date].name + '<br/>' +
                 '<bold>买入价</bold>: ' + tableData[date].price + '<br/>' +
                 '<bold>卖出价</bold>: ' + tableData[date].close_price + '<br/>' +
-                '<bold>交易量</bold>: ' + tableData[date].hold_vol + '<br/>' +
+                '<bold>交易量</bold>: ' + tableData[date].vol + '<br/>' +
                 '<bold>时间</bold>: ' + tableData[date].date_desc + '<br/>' +
                 '<bold>市值</bold>: ' + (tableData[date].capital / 10000.0).toFixed(2) + '万</span>' + '<br/>' +
                 `<bold>盈亏额</bold>: <span class="${color}">` + tableData[date].profit_amount + ' </span>' + '<br/>' +
@@ -316,6 +345,14 @@
             });
           }
         });
+
+        const tradeList = Object.values(tableData);
+        statTable.rows[1].cells[0].innerHTML = calculateTotalReturnPercent(tradeList) + '%';
+        statTable.rows[1].cells[1].innerHTML = calculateAnnualizedReturn(tradeList) + '%';
+        statTable.rows[1].cells[2].innerHTML = calculateMaximumDrawdown(tradeList) + '%';
+        statTable.rows[1].cells[3].innerHTML = calculateWinningPercentage(tradeList) + '%';
+        statTable.rows[1].cells[4].innerHTML = calculateAvgProfit(tradeList) + '%';
+        statTable.rows[1].cells[5].innerHTML = calculateTradeFrequency(tradeList) + '笔/天';
       });
 
     function gotoDate(targetDate) {

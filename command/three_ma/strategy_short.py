@@ -4,7 +4,6 @@ from chan.chan_const import FractalType
 class StrategyShort:
     def __init__(self, main):
         self.main = main
-        self.higher_fractal = None
 
     def run_step(self, row, fractal):
         """
@@ -20,8 +19,9 @@ class StrategyShort:
             self.main.sell(row['date'], row['open'])
 
         if (not self.main.buy_ts) and self.main.is_plan_buy:
-            if row['high'] <= self.main.buy_base_price:
-                self.main.buy(row['date'], row['close'])
+            self.main.is_plan_buy = False
+            if row['open'] <= self.main.buy_base_price:
+                self.main.buy(row['date'], row['open'])
                 self.main.sell_base_price = self.main.buy_base_price
 
         if self.main.buy_ts:
@@ -30,19 +30,19 @@ class StrategyShort:
 
     def make_plan(self, row, fractal):
         if not row['cross_ma15_ma60']:
-            self.higher_fractal = None
+            self.main.higher_fractal = None
 
         if fractal and fractal.fractal_type == FractalType.TOP:
-            if not self.higher_fractal:
-                self.higher_fractal = fractal
+            if not self.main.higher_fractal:
+                self.main.higher_fractal = fractal
 
-            if self.higher_fractal.fractal_value < fractal.fractal_value:
-                self.higher_fractal = fractal
+            if self.main.higher_fractal.fractal_value < fractal.fractal_value:
+                self.main.higher_fractal = fractal
 
             if not self.main.buy_ts and self.can_buy(row):
                 self.main.is_plan_buy = True
                 self.main.buy_direction = 'SHORT'
-                self.main.buy_base_price = self.higher_fractal.fractal_value
+                self.main.buy_base_price = self.main.higher_fractal.fractal_value
 
         if self.main.buy_ts and self.main.buy_direction == 'SHORT':
             if self.can_sell(row):
@@ -55,8 +55,8 @@ class StrategyShort:
     def can_buy(self, row):
         conditions = [
             not row['cross_ma15_ma60'],
-            row['ma432_angle'] > 0,
-            row['histogram'] > 0,
+            # row['ma432_angle'] > 0,
+            # row['macd'] > 0,
             # row['ma60_angle'] > 0.06,
             # row['ma15_angle'] > 0.1,
             row['ma60'] >= row['ma432'],
@@ -68,7 +68,9 @@ class StrategyShort:
     def can_sell(self, row):
         conditions = [
             row['cross_ma15_ma60'],
-            row['high'] < row['ma60'],
+            # row['close'] < row['ma60'],
+            row['dif'] < 0,
+            # row['dea'] < 0,
         ]
 
         return not any(conditions)
