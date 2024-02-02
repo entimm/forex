@@ -16,6 +16,7 @@ controllers = [
     'index',
     'chart',
     'backtest',
+    'metatrade',
 ]
 
 for controller in controllers:
