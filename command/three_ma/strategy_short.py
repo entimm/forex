@@ -26,7 +26,7 @@ class StrategyShort:
 
         if self.main.buy_ts:
             if row['high'] > self.main.sell_base_price:
-                self.main.sell(row['date'], min(self.main.sell_base_price, row['low']))
+                self.main.sell(row['date'], self.main.sell_base_price)
 
     def make_plan(self, row, fractal):
         if not row['cross_ma15_ma60']:
