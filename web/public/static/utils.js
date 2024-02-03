@@ -1,22 +1,26 @@
 /**
  * 累计收益额
  */
-function calculateTotalReturnPercent(trades) {
+function calculateTotalReturnPercent(trades, initialCapital) {
   let totalProfitAmount = trades.reduce((totalReturn, trade) => totalReturn + trade['profit_amount'], 0);
-  return ((totalProfitAmount/trades[0]['capital'] - 1) * 100).toFixed(2);
+
+  return ((totalProfitAmount / initialCapital) * 100).toFixed(2);
+}
+
+function investYears(trades) {
+  let firstTradeDate = new Date(trades[0].date_desc.split(' - ')[0]);
+  let lastTradeDate = new Date(trades[trades.length - 1].date_desc.split(' - ')[0]);
+
+  return (lastTradeDate - firstTradeDate) / (365 * 24 * 60 * 60 * 1000);
 }
 
 /**
  * 年化收益率
  */
-function calculateAnnualizedReturn(trades) {
-  const firstTradeDate = new Date(trades[0].date_desc.split(' - ')[0]);
-  const lastTradeDate = new Date(trades[trades.length - 1].date_desc.split(' - ')[0]);
-  const holdingPeriodYears = (lastTradeDate - firstTradeDate) / (365 * 24 * 60 * 60 * 1000);
+function calculateAnnualizedReturn(totalReturnPercent, years) {
+  totalReturnPercent /= 100;
 
-  const totalReturnPercent = calculateTotalReturnPercent(trades);
-
-  const annualizedReturn = Math.pow((totalReturnPercent / 100 + 1), 1 / holdingPeriodYears);
+  const annualizedReturn = Math.pow((totalReturnPercent + 1), 1 / years) - 1;
 
   return (annualizedReturn * 100).toFixed(2);
 }

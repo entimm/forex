@@ -140,6 +140,8 @@
     let symbol = '{{ request_args.symbol }}';
 
     let statTable = document.getElementById('stat-grid');
+
+    let initial_capital = {{ initial_capital }};
   </script>
   {% if kline_list %}
     {% include "_chart_kline.html" %}
@@ -346,9 +348,13 @@
           }
         });
 
+
         const tradeList = Object.values(tableData);
-        statTable.rows[1].cells[0].innerHTML = calculateTotalReturnPercent(tradeList) + '%';
-        statTable.rows[1].cells[1].innerHTML = calculateAnnualizedReturn(tradeList) + '%';
+        const totalReturnPercent = calculateTotalReturnPercent(tradeList, initial_capital);
+        const years = investYears(tradeList);
+
+        statTable.rows[1].cells[0].innerHTML = totalReturnPercent + '%';
+        statTable.rows[1].cells[1].innerHTML = calculateAnnualizedReturn(totalReturnPercent, years) + '%';
         statTable.rows[1].cells[2].innerHTML = calculateMaximumDrawdown(tradeList) + '%';
         statTable.rows[1].cells[3].innerHTML = calculateWinningPercentage(tradeList) + '%';
         statTable.rows[1].cells[4].innerHTML = calculateAvgProfit(tradeList) + '%';

@@ -9,6 +9,9 @@ from common.utils import row_to_kline, get_forex_kline
 
 blueprint = Blueprint('backtest', __name__)
 
+initial_capital = 100000
+leverage = 100
+bet_percentage = 0.1
 
 @blueprint.route('/backtest_result_data')
 def backtest_result_data():
@@ -43,6 +46,7 @@ def backtest_result():
     template_var = {
         'kline_list': kline_list,
         'backtest_trades': trades,
+        'initial_capital': initial_capital,
         'indicator_config': {
             'ma': [{'period': item, 'color': get_color_func(), 'size': 1} for item in ma],
             'macd': config.get('indicator')['macd'],
@@ -57,10 +61,7 @@ def backtest_result():
     return render_template('backtest_result.html', **template_var)
 
 
-def generate_order_leverage(trades, initial_capital=1000):
-    leverage = 100
-    bet_percentage = 0.1
-
+def generate_order_leverage(trades):
     order = {}
     capital = initial_capital
     buy_date = ''

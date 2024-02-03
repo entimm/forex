@@ -1,5 +1,6 @@
 import json
 import os
+from collections import deque
 
 import click
 from chan.element.bar import Bar
@@ -8,6 +9,8 @@ from chan.manager.bar_union_manager import BarUnionManager
 
 from command.three_ma.strategy_long import StrategyLong
 from command.three_ma.strategy_short import StrategyShort
+from command.three_ma.strategy_test import StrategyTest
+from common import price_calculate
 from common.const import RESOURCES_PATH, PeriodEnum
 from common.price_calculate import ma, ma_angle
 from common.utils import get_forex_kline
@@ -17,11 +20,11 @@ from common.utils import get_forex_kline
 @click.argument('period', type=str, default='D')
 @click.argument('symbol', type=str)
 def backtest_three_ma(period: str, symbol):
-    strategy = Strategy()
-    strategy.run(symbol, PeriodEnum[period])
+    main = Main()
+    main.run(symbol, PeriodEnum[period])
 
 
-class Strategy:
+class Main:
     def __init__(self):
         self.symbol = None
         self.period_enum = None
@@ -41,8 +44,11 @@ class Strategy:
 
         self.ma = [5, 15, 60, 432]
 
+        self.recent_data = deque(maxlen=10)
+
         self.lower_fractal = None
         self.higher_fractal = None
+        self.latest_fractal = None
 
     def run(self, symbol, period_enum: PeriodEnum):
         """
@@ -53,19 +59,20 @@ class Strategy:
 
         df = self.prepare_data_df()
 
-        long_strategy = StrategyLong(self)
-        short_strategy = StrategyShort(self)
+        trategies = [
+            # StrategyLong(self),
+            # StrategyShort(self),
+            StrategyTest(self),
+        ]
 
         for index, row in df.iterrows():
             row = row.to_dict()
+            self.recent_data.appendleft(row)
+
             fractal = self.bar_union_manager.add_bar(Bar(index, Kline(row)))
-            long_strategy.run_step(row, fractal)
-            short_strategy.run_step(row, fractal)
-
-            # lowestFractalPrice = self.lower_fractal.fractal_value if self.lower_fractal else 999999
-            # highestFractalPrice = self.higher_fractal.fractal_value if self.higher_fractal else -999999
-
-            # print(f"data={row['date']}#{row['ma15']}#{row['ma60']}#{row['ma432']} 【#{row['dif']}#{row['dea']}】 #{lowestFractalPrice}#{highestFractalPrice}")
+            self.latest_fractal = fractal
+            for trategy in trategies:
+                trategy.run_step()
 
         # 结果输出
         result_json_file = os.path.join(RESOURCES_PATH, 'backtest', f'back_test_{self.symbol}.json')
@@ -95,6 +102,15 @@ class Strategy:
         df['dif'] = df['ema12'] - df['ema26']
         df['dea'] = df['dif'].ewm(span=6).mean()
         df['macd'] = df['dif'] - df['dea']
+
+        # df[f'ma15_up_n'] = price_calculate.cont_len(df[f'ma15_angle'] > 0)
+        # df[f'ma15_down_n'] = price_calculate.cont_len(df[f'ma15_angle'] < 0)
+        #
+        # df[f'ma60_up_n'] = price_calculate.cont_len(df[f'ma60_angle'] > 0)
+        # df[f'ma60_down_n'] = price_calculate.cont_len(df[f'ma60_angle'] < 0)
+        #
+        # df[f'ma432_up_n'] = price_calculate.cont_len(df[f'ma432_angle'] > 0)
+        # df[f'ma432_down_n'] = price_calculate.cont_len(df[f'ma432_angle'] < 0)
 
         df = df.reset_index(names='date')
         df['time'] = df['date'].dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -133,3 +149,6 @@ class Strategy:
         self.buy_direction = None
         self.is_plan_sell = False
         self.sell_flag = 0
+
+    def recent(self, i):
+        return self.recent_data[i]
