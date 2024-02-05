@@ -9,7 +9,7 @@ from common.utils import row_to_kline, get_forex_kline
 
 blueprint = Blueprint('backtest', __name__)
 
-initial_capital = 100000
+initial_capital = 1000
 leverage = 100
 bet_percentage = 0.1
 

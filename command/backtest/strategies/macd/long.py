@@ -51,12 +51,8 @@ class StrategyLong:
     def can_buy(self):
         conditions = [
             not self.main.recent_data[0]['cross_ma15_ma60'],
-            self.main.recent_data[0]['ma432_angle'] > 0,
-            self.main.recent_data[0]['ma60_angle'] > 0.06,
-            self.main.recent_data[0]['ma15_angle'] > 0.1,
-            self.main.recent_data[0]['ma60'] >= self.main.recent_data[0]['ma432'],
             self.main.recent_data[0]['ma15'] >= self.main.recent_data[0]['ma432'],
-            # self.main.recent_data[0]['macd'] < 0,
+            self.main.recent_data[0]['ma60'] >= self.main.recent_data[0]['ma432'],
         ]
 
         return all(conditions)
@@ -64,9 +60,7 @@ class StrategyLong:
     def can_sell(self):
         conditions1 = [
             self.main.recent_data[0]['cross_ma15_ma60'],
-            self.main.recent_data[0]['high'] < self.main.recent_data[0]['ma60'],
-            # self.main.recent_data[0]['dif'] < 0,
-            # self.main.recent_data[0]['dea'] < 0,
+            self.main.recent_data[0]['dif'] < 0,
         ]
 
         conditions2 = [

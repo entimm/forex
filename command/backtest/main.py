@@ -7,10 +7,9 @@ from chan.element.bar import Bar
 from chan.element.kline import Kline
 from chan.manager.bar_union_manager import BarUnionManager
 
-from command.three_ma.strategy_long import StrategyLong
-from command.three_ma.strategy_short import StrategyShort
-from command.three_ma.strategy_test import StrategyTest
-from common import price_calculate
+from command.backtest.strategies.macd.long import StrategyLong
+from command.backtest.strategies.macd.short import StrategyShort
+from command.backtest.strategies.strategy_test import StrategyTest
 from common.const import RESOURCES_PATH, PeriodEnum
 from common.price_calculate import ma, ma_angle
 from common.utils import get_forex_kline
@@ -38,7 +37,6 @@ class Main:
         self.buy_direction = None
         self.buy_base_price = None
         self.sell_base_price = None
-        self.sell_flag = 0
 
         self.order_list = []
 
@@ -141,14 +139,12 @@ class Main:
             'price': round(price, 2),
             'action': 'SELL',
             'direction': self.buy_direction,
-            'flag': self.sell_flag,
         }
         print(sell_info)
         self.order_list.append(sell_info)
         self.buy_ts = None
         self.buy_direction = None
         self.is_plan_sell = False
-        self.sell_flag = 0
 
     def recent(self, i):
         return self.recent_data[i]

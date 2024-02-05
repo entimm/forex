@@ -2,7 +2,7 @@
 
 import click
 
-from command.three_ma.main import backtest_three_ma
+from command.backtest.main import backtest_three_ma
 
 
 @click.group()

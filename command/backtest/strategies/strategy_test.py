@@ -28,7 +28,7 @@ class StrategyTest:
         if not self.main.buy_ts and self.can_buy():
             self.main.is_plan_buy = True
             self.main.buy_direction = 'LONG'
-            self.main.buy_base_price = self.main.recent_data[0]['close'] * 0.008
+            self.main.buy_base_price = self.main.recent_data[0]['close'] * (1 - 0.008)
 
         if self.main.buy_ts and self.main.buy_direction == 'LONG':
             if self.can_sell():
