@@ -53,6 +53,7 @@ class StrategyShort:
             self.main.recent_data[0]['cross_ma15_ma60'],
             self.main.recent_data[0]['ma15'] <= self.main.recent_data[0]['ma432'],
             self.main.recent_data[0]['ma60'] <= self.main.recent_data[0]['ma432'],
+            self.main.recent_data[0]['macd'] < 0,
         ]
 
         return all(conditions)
@@ -60,7 +61,7 @@ class StrategyShort:
     def can_sell(self):
         conditions1 = [
             not self.main.recent_data[0]['cross_ma15_ma60'],
-            self.main.recent_data[0]['dif'] > 0,
+            self.main.recent_data[0]['macd'] > 0,
         ]
 
         conditions2 = [

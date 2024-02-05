@@ -6,6 +6,7 @@ from common.config import config
 APP_PATH = os.path.dirname(os.path.dirname(__file__))
 
 RESOURCES_PATH = os.path.join(APP_PATH, 'resources')
+MQL_PATH = config['mql_path']
 
 MENUS = config['menus']
 

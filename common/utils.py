@@ -4,11 +4,14 @@ from urllib.parse import urlencode
 
 import pandas as pd
 
-from common.const import RESOURCES_PATH
+from common.const import RESOURCES_PATH, MQL_PATH
 
 
 def get_forex_kline(symbol, period_enum):
-    csv_file = os.path.join(RESOURCES_PATH, f'{symbol}_{period_enum.name}.csv')
+    csv_file = os.path.join(MQL_PATH, 'Files', f'{symbol}_{period_enum.name}.csv')
+    if not os.path.exists(csv_file):
+        csv_file = os.path.join(RESOURCES_PATH, f'{symbol}_{period_enum.name}.csv')
+
     df = pd.read_csv(csv_file, parse_dates=['date'], index_col='date')
 
     return df

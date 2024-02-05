@@ -18,7 +18,7 @@ from common.utils import get_forex_kline
 @click.command()
 @click.argument('period', type=str, default='D')
 @click.argument('symbol', type=str)
-def backtest_three_ma(period: str, symbol):
+def backtest1(period: str, symbol):
     main = Main()
     main.run(symbol, PeriodEnum[period])
 
@@ -123,10 +123,10 @@ class Main:
         buy_info = {
             'date': ts.strftime('%Y-%m-%d %H:%M:%S'),
             'symbol': self.symbol,
-            'price': round(price, 2),
+            'price': round(price, 5),
             'action': 'BUY',
             'direction': self.buy_direction,
-            'out_price': round(self.buy_base_price, 2),
+            'out_price': round(self.buy_base_price, 5),
         }
         print(buy_info)
         self.order_list.append(buy_info)
@@ -136,7 +136,7 @@ class Main:
         sell_info = {
             'date': ts.strftime('%Y-%m-%d %H:%M:%S'),
             'symbol': self.symbol,
-            'price': round(price, 2),
+            'price': round(price, 5),
             'action': 'SELL',
             'direction': self.buy_direction,
         }
