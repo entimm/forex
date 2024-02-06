@@ -70,14 +70,15 @@ class Main:
         df = self.prepare_data_df()
 
         latest_row = df.iloc[-1]
-        FeiShuRobot.instance('notify-heartbeat').send_info('最新行情', [
-            MarkdownElement.make(f"**交易品种**: <font color='red'>{self.symbol} - {self.period_enum.name}</font>"),
-            MarkdownElement.make(f"**行情时间**: <font color='red'>{latest_row['time']}</font>"),
-            MarkdownElement.make(f"**开**: <font color='red'>{round(latest_row['open'], 5)}</font>"),
-            MarkdownElement.make(f"**高**: <font color='red'>{round(latest_row['high'], 5)}</font>"),
-            MarkdownElement.make(f"**低**: <font color='red'>{round(latest_row['low'], 5)}</font>"),
-            MarkdownElement.make(f"**收**: <font color='red'>{round(latest_row['close'], 5)}</font>"),
-        ])
+        if len(self.recent_data) == 0 or latest_row['date'] > self.recent_data[0]['date']:
+            FeiShuRobot.instance('notify-heartbeat').send_info('最新行情', [
+                MarkdownElement.make(f"**交易品种**: <font color='red'>{self.symbol} - {self.period_enum.name}</font>"),
+                MarkdownElement.make(f"**行情时间**: <font color='red'>{latest_row['time']}</font>"),
+                MarkdownElement.make(f"**开**: <font color='red'>{round(latest_row['open'], 5)}</font>"),
+                MarkdownElement.make(f"**高**: <font color='red'>{round(latest_row['high'], 5)}</font>"),
+                MarkdownElement.make(f"**低**: <font color='red'>{round(latest_row['low'], 5)}</font>"),
+                MarkdownElement.make(f"**收**: <font color='red'>{round(latest_row['close'], 5)}</font>"),
+            ])
 
         trategies = [
             StrategyLong(self),
@@ -86,7 +87,7 @@ class Main:
 
         for index, row in df.iterrows():
             row = row.to_dict()
-            if len(self.recent_data) and self.recent_data[0]['time'] >= row['time']:
+            if len(self.recent_data) and self.recent_data[0]['date'] >= row['date']:
                 continue
 
             self.recent_data.appendleft(row)
